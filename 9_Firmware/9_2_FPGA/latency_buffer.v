@@ -62,7 +62,7 @@ always @(posedge clk or negedge reset_n) begin
     end else begin
         // Default: no valid output
         valid_out_reg <= 0;
-        
+
         // ===== WRITE SIDE =====
         if (valid_in) begin
             // Increment write pointer (wrap at 4095)
@@ -71,24 +71,24 @@ always @(posedge clk or negedge reset_n) begin
             end else begin
                 write_ptr <= write_ptr + 1;
             end
-            
+
             // Count how many samples we've written
             if (delay_counter < LATENCY) begin
                 delay_counter <= delay_counter + 1;
-                
+
                 // When we've written LATENCY samples, buffer is "primed"
                 if (delay_counter == LATENCY - 1) begin
                     buffer_has_data <= 1'b1;
                 end
             end
         end
-        
+
         // ===== READ SIDE =====
         // Only start reading after we have LATENCY samples in buffer
         if (buffer_has_data && valid_in) begin
             // Read pointer follows write pointer with LATENCY delay
             // Calculate: read_ptr = (write_ptr - LATENCY) mod 4096
-            
+
             // Handle wrap-around correctly
             if (write_ptr >= LATENCY) begin
                 read_ptr <= write_ptr - LATENCY;
@@ -96,7 +96,7 @@ always @(posedge clk or negedge reset_n) begin
                 // Wrap around: 4096 + write_ptr - LATENCY
                 read_ptr <= 4096 + write_ptr - LATENCY;
             end
-            
+
             // Output is valid
             valid_out_reg <= 1'b1;
         end
