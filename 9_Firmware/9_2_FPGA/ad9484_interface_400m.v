@@ -4,11 +4,11 @@ module ad9484_interface_400m (
     input wire [7:0] adc_d_n,        // ADC Data N
     input wire adc_dco_p,            // Data Clock Output P (400MHz)
     input wire adc_dco_n,            // Data Clock Output N (400MHz)
-    
+
     // System Interface
     input wire sys_clk,              // 100MHz system clock (for control only)
     input wire reset_n,
-    
+
     // Output at 400MHz domain
     output wire [7:0] adc_data_400m, // ADC data at 400MHz
     output wire adc_data_valid_400m, // Valid at 400MHz
@@ -150,7 +150,7 @@ always @(posedge adc_dco_buffered or negedge reset_n_400m) begin
         dco_phase <= 1'b0;
     end else begin
         dco_phase <= ~dco_phase;
-        
+
         if (dco_phase) begin
             // Output falling edge data (completes the 400MSPS stream)
             adc_data_400m_reg <= adc_data_fall_bufg;
@@ -158,7 +158,7 @@ always @(posedge adc_dco_buffered or negedge reset_n_400m) begin
             // Output rising edge data
             adc_data_400m_reg <= adc_data_rise_bufg;
         end
-        
+
         adc_data_valid_400m_reg <= 1'b1; // Always valid when ADC is running
     end
 end
