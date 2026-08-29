@@ -4,22 +4,22 @@
 module frequency_matched_filter (
     input wire clk,
     input wire reset_n,
-    
+
     // Input from Forward FFT (16-bit Q15)
     input wire signed [15:0] fft_real_in,
     input wire signed [15:0] fft_imag_in,
     input wire fft_valid_in,
-    
+
     // Reference Chirp (16-bit Q15) - assumed to be FFT of transmitted chirp
 
     input wire signed [15:0] ref_chirp_real,
     input wire signed [15:0] ref_chirp_imag,
-    
+
     // Output (16-bit Q15) - FFT(input) ? conj(FFT(reference))
     output wire signed [15:0] filtered_real,
     output wire signed [15:0] filtered_imag,
     output wire filtered_valid,
-    
+
     output wire [1:0] state
 );
 
@@ -71,7 +71,7 @@ always @(posedge clk) begin
         bd_reg <= b_reg * d_reg;  // bd
         bc_reg <= b_reg * c_reg;  // bc
         ad_reg <= a_reg * d_reg;  // ad
-        
+
         valid_p2 <= valid_p1;
     end
 end
@@ -87,7 +87,7 @@ always @(posedge clk) begin
     end else begin
         real_sum <= ac_reg + bd_reg;  // ac + bd
         imag_sum <= bc_reg - ad_reg;  // bc - ad
-        
+
         valid_p3 <= valid_p2;
     end
 end
@@ -100,7 +100,7 @@ function automatic signed [15:0] saturate_and_scale;
     begin
         // Round to nearest: add 0.5 LSB (bit 14)
         rounded = q30_value + (1 << 14);
-        
+
         // Check for overflow
         if (rounded > 32'sh3FFF8000) begin  // > 32767.5 in Q30
             result = 16'h7FFF;
@@ -110,7 +110,7 @@ function automatic signed [15:0] saturate_and_scale;
             // Take bits [30:15] for Q15
             result = rounded[30:15];
         end
-        
+
         saturate_and_scale = result;
     end
 endfunction

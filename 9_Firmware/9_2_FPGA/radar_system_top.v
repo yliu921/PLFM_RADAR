@@ -2,13 +2,13 @@
 
 /**
  * radar_system_top.v
- * 
+ *
  * Complete Radar System Top Module
  * Integrates:
  * - Radar Transmitter (PLFM chirp generation)
  * - Radar Receiver (ADC interface, DDC, matched filtering, Doppler processing)
  * - USB Data Interface (FT601 USB 3.0 or FT2232H USB 2.0, selected by USB_MODE)
- * 
+ *
  * Clock domains:
  * - clk_100m: System clock (100MHz)
  * - clk_120m_dac: DAC clock (120MHz)
@@ -25,64 +25,64 @@ module radar_system_top (
     input wire clk_120m_dac,             // 120MHz DAC clock
     input wire ft601_clk_in,             // FT601 clock (100MHz)
     input wire reset_n,                   // Active-low reset
-    
+
     // ========== TRANSMITTER INTERFACES ==========
-    
+
     // DAC Interface
     output wire [7:0] dac_data,
     output wire dac_clk,
     output wire dac_sleep,
-    
+
     // RF Switch Control
     output wire fpga_rf_switch,
-    
+
     // Mixer Enables
     output wire rx_mixer_en,
     output wire tx_mixer_en,
-    
+
     // ADAR1000 Beamformer Control (via level shifters)
     output wire adar_tx_load_1, adar_rx_load_1,
     output wire adar_tx_load_2, adar_rx_load_2,
     output wire adar_tx_load_3, adar_rx_load_3,
     output wire adar_tx_load_4, adar_rx_load_4,
     output wire adar_tr_1, adar_tr_2, adar_tr_3, adar_tr_4,
-    
+
     // Level Shifter SPI Interface (STM32F7 to ADAR1000)
     input wire stm32_sclk_3v3,
     input wire stm32_mosi_3v3,
     output wire stm32_miso_3v3,
-    input wire stm32_cs_adar1_3v3, stm32_cs_adar2_3v3, 
+    input wire stm32_cs_adar1_3v3, stm32_cs_adar2_3v3,
     input wire stm32_cs_adar3_3v3, stm32_cs_adar4_3v3,
-    
+
     output wire stm32_sclk_1v8,
     output wire stm32_mosi_1v8,
     input wire stm32_miso_1v8,
     output wire stm32_cs_adar1_1v8, stm32_cs_adar2_1v8,
     output wire stm32_cs_adar3_1v8, stm32_cs_adar4_1v8,
-    
+
     // ========== RECEIVER INTERFACES ==========
-    
+
     // ADC Physical Interface (LVDS)
     input wire [7:0] adc_d_p,            // ADC Data P (LVDS)
     input wire [7:0] adc_d_n,            // ADC Data N (LVDS)
     input wire adc_dco_p,                 // Data Clock Output P (400MHz LVDS)
     input wire adc_dco_n,                 // Data Clock Output N (400MHz LVDS)
     output wire adc_pwdn,                  // ADC Power Down
-    
+
     // ========== STM32 CONTROL INTERFACES ==========
-    
+
     // Chirp/Beam Control (toggle signals from STM32)
     input wire stm32_new_chirp,
     input wire stm32_new_elevation,
     input wire stm32_new_azimuth,
     input wire stm32_mixers_enable,
-    
+
     // ========== FT601 USB 3.0 INTERFACE ==========
-    
+
     // Data bus
     inout wire [31:0] ft601_data,         // 32-bit bidirectional data bus
     output wire [3:0] ft601_be,            // Byte enable (4 lanes for 32-bit mode)
-    
+
     // Control signals
     output wire ft601_txe_n,                // Transmit enable (active low)
     output wire ft601_rxf_n,                // Receive enable (active low)
@@ -92,14 +92,14 @@ module radar_system_top (
     output wire ft601_rd_n,                  // Read strobe (active low)
     output wire ft601_oe_n,                  // Output enable (active low)
     output wire ft601_siwu_n,                 // Send immediate / Wakeup
-    
+
     // FIFO flags
     input wire [1:0] ft601_srb,              // Selected read buffer
     input wire [1:0] ft601_swb,               // Selected write buffer
-    
+
     // Clock output (optional, FT601 only — not used for FT2232H)
     output wire ft601_clk_out,
-    
+
     // ========== FT2232H USB 2.0 INTERFACE (USB_MODE=1) ==========
     // 8-bit bidirectional data bus (245 Synchronous FIFO mode, Channel A)
     inout wire [7:0] ft_data,            // 8-bit bidirectional data bus
@@ -111,19 +111,19 @@ module radar_system_top (
     output wire ft_siwu,                  // Send Immediate / WakeUp
 
     // ========== STATUS OUTPUTS ==========
-    
+
     // Beam position tracking
     output wire [5:0] current_elevation,
     output wire [5:0] current_azimuth,
     output wire [5:0] current_chirp,
     output wire new_chirp_frame,
-    
+
     // Doppler processing outputs (for debugging)
     output wire [31:0] dbg_doppler_data,
     output wire dbg_doppler_valid,
     output wire [4:0] dbg_doppler_bin,
     output wire [5:0] dbg_range_bin,
-    
+
     // System status
     output wire [3:0] system_status,
 
@@ -438,25 +438,25 @@ radar_transmitter tx_inst (
     .clk_120m_dac(clk_120m_dac_buf),
     .reset_n(sys_reset_120m_n),    // 120 MHz-synchronized reset for DAC-domain logic
     .reset_100m_n(sys_reset_n),    // 100 MHz-synchronized reset for edge detectors/CDC
-    
+
     // DAC Interface
     .dac_data(dac_data),
     .dac_clk(dac_clk),
     .dac_sleep(dac_sleep),
-    
+
     // Mixer Enables
     .rx_mixer_en(rx_mixer_en),
     .tx_mixer_en(tx_mixer_en),
-    
+
     // STM32 Control Interface
     .stm32_new_chirp(stm32_new_chirp),
     .stm32_new_elevation(stm32_new_elevation),
     .stm32_new_azimuth(stm32_new_azimuth),
     .stm32_mixers_enable(stm32_mixers_enable),
-    
+
     // RF Switch Control
     .fpga_rf_switch(fpga_rf_switch),
-    
+
     // ADAR1000 Control Interface
     .adar_tx_load_1(adar_tx_load_1),
     .adar_rx_load_1(adar_rx_load_1),
@@ -470,7 +470,7 @@ radar_transmitter tx_inst (
     .adar_tr_2(adar_tr_2),
     .adar_tr_3(adar_tr_3),
     .adar_tr_4(adar_tr_4),
-    
+
     // Level Shifter SPI Interface
     .stm32_sclk_3v3(stm32_sclk_3v3),
     .stm32_mosi_3v3(stm32_mosi_3v3),
@@ -479,7 +479,7 @@ radar_transmitter tx_inst (
     .stm32_cs_adar2_3v3(stm32_cs_adar2_3v3),
     .stm32_cs_adar3_3v3(stm32_cs_adar3_3v3),
     .stm32_cs_adar4_3v3(stm32_cs_adar4_3v3),
-    
+
     .stm32_sclk_1v8(stm32_sclk_1v8),
     .stm32_mosi_1v8(stm32_mosi_1v8),
     .stm32_miso_1v8(stm32_miso_1v8),
@@ -487,7 +487,7 @@ radar_transmitter tx_inst (
     .stm32_cs_adar2_1v8(stm32_cs_adar2_1v8),
     .stm32_cs_adar3_1v8(stm32_cs_adar3_1v8),
     .stm32_cs_adar4_1v8(stm32_cs_adar4_1v8),
-    
+
     // Beam Position Tracking
     .current_elevation(tx_current_elevation),
     .current_azimuth(tx_current_azimuth),
@@ -502,30 +502,30 @@ radar_transmitter tx_inst (
 radar_receiver_final rx_inst (
     .clk(clk_100m_buf),
     .reset_n(sys_reset_n),
-    
+
     // Chirp counter from transmitter (CDC-synchronized from 120 MHz domain)
     .chirp_counter(tx_current_chirp_sync),
     // Frame-start pulse from transmitter (CDC-synchronized toggle→pulse)
     .tx_frame_start(tx_new_chirp_frame_sync),
-    
+
     // ADC Physical Interface
     .adc_d_p(adc_d_p),
     .adc_d_n(adc_d_n),
     .adc_dco_p(adc_dco_p),
     .adc_dco_n(adc_dco_n),
     .adc_pwdn(adc_pwdn),
-    
+
     // Doppler Outputs
     .doppler_output(rx_doppler_output),
     .doppler_valid(rx_doppler_valid),
     .doppler_bin(rx_doppler_bin),
     .range_bin(rx_range_bin),
-    
+
     // Matched filter range profile (for USB)
     .range_profile_i_out(rx_range_profile[15:0]),
     .range_profile_q_out(rx_range_profile[31:16]),
     .range_profile_valid_out(rx_range_valid),
-    
+
     // Host command inputs (Gap 4: USB Read Path)
     .host_mode(host_radar_mode),
     .host_trigger(host_trigger_pulse),
@@ -722,7 +722,7 @@ if (USB_MODE == 0) begin : gen_ft601
         .clk(clk_100m_buf),
         .reset_n(sys_reset_n),
         .ft601_reset_n(sys_reset_ft601_n),
-        
+
         // Radar data inputs
         .range_profile(usb_range_profile),
         .range_valid(usb_range_valid),
@@ -731,7 +731,7 @@ if (USB_MODE == 0) begin : gen_ft601
         .doppler_valid(usb_doppler_valid),
         .cfar_detection(usb_detect_flag),
         .cfar_valid(usb_detect_valid),
-        
+
         // FT601 Interface
         .ft601_data(ft601_data),
         .ft601_be(ft601_be),
@@ -747,7 +747,7 @@ if (USB_MODE == 0) begin : gen_ft601
         .ft601_swb(ft601_swb),
         .ft601_clk_out(ft601_clk_out),
         .ft601_clk_in(ft601_clk_buf),
-        
+
         // Host command outputs
         .cmd_data(usb_cmd_data),
         .cmd_valid(usb_cmd_valid),
@@ -795,7 +795,7 @@ end else begin : gen_ft2232h
         .clk(clk_100m_buf),
         .reset_n(sys_reset_n),
         .ft_reset_n(sys_reset_ft601_n),  // Reuse same synchronized reset
-        
+
         // Radar data inputs
         .range_profile(usb_range_profile),
         .range_valid(usb_range_valid),
@@ -1055,11 +1055,11 @@ reg [31:0] data_packet_counter;
 
 always @(posedge clk_100m_buf) begin
     debug_cycle_counter <= debug_cycle_counter + 1;
-    
+
     if (tx_new_chirp_frame_sync) begin
         $display("[TOP] New chirp frame started at cycle %0d", debug_cycle_counter);
     end
-    
+
     if (rx_doppler_valid) begin
         data_packet_counter <= data_packet_counter + 1;
         if (data_packet_counter < 10) begin
@@ -1068,7 +1068,7 @@ always @(posedge clk_100m_buf) begin
                      rx_doppler_real, rx_doppler_imag);
         end
     end
-    
+
     if (data_packet_counter == 100) begin
         $display("[TOP] First 100 doppler packets processed");
     end

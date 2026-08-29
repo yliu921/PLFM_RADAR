@@ -1,21 +1,21 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date:    19:04:35 12/14/2025 
-// Design Name: 
-// Module Name:    radar_transmitter 
-// Project Name: 
-// Target Devices: 
-// Tool versions: 
-// Description: 
+// Company:
+// Engineer:
 //
-// Dependencies: 
+// Create Date:    19:04:35 12/14/2025
+// Design Name:
+// Module Name:    radar_transmitter
+// Project Name:
+// Target Devices:
+// Tool versions:
+// Description:
 //
-// Revision: 
+// Dependencies:
+//
+// Revision:
 // Revision 0.01 - File Created
-// Additional Comments: 
+// Additional Comments:
 //
 //////////////////////////////////////////////////////////////////////////////////
 module radar_transmitter(
@@ -24,23 +24,23 @@ module radar_transmitter(
     input wire clk_120m_dac,       // 120MHz DAC clock
     input wire reset_n,            // Reset synchronized to clk_120m_dac
     input wire reset_100m_n,       // Reset synchronized to clk_100m (for edge detectors/CDC)
-    
+
     // DAC Interface
     output wire [7:0] dac_data,
     output wire dac_clk,
     output wire dac_sleep,
     output wire rx_mixer_en,
     output wire tx_mixer_en,
-	 
-	     // STM32 Control Interface
+
+    // STM32 Control Interface
     input wire stm32_new_chirp,
-    input wire stm32_new_elevation, 
+    input wire stm32_new_elevation,
     input wire stm32_new_azimuth,
     input wire stm32_mixers_enable,
-	 
-	 output wire fpga_rf_switch,
-	 
-	     // ADAR1000 Control Interface
+
+    output wire fpga_rf_switch,
+
+    // ADAR1000 Control Interface
     output wire adar_tx_load_1,
     output wire adar_rx_load_1,
     output wire adar_tx_load_2,
@@ -53,7 +53,7 @@ module radar_transmitter(
     output wire adar_tr_2,
     output wire adar_tr_3,
     output wire adar_tr_4,
-    
+
     // Level Shifter SPI Interface (STM32F7 to ADAR1000)
     input wire stm32_sclk_3v3,
     input wire stm32_mosi_3v3,
@@ -62,7 +62,7 @@ module radar_transmitter(
     input wire stm32_cs_adar2_3v3,
     input wire stm32_cs_adar3_3v3,
     input wire stm32_cs_adar4_3v3,
-    
+
     output wire stm32_sclk_1v8,
     output wire stm32_mosi_1v8,
     input wire stm32_miso_1v8,
@@ -70,16 +70,14 @@ module radar_transmitter(
     output wire stm32_cs_adar2_1v8,
     output wire stm32_cs_adar3_1v8,
     output wire stm32_cs_adar4_1v8,
-	 
-			 // Beam Position Tracking
-	 output wire [5:0] current_elevation,
-	 output wire [5:0] current_azimuth,
-	 output wire [5:0] current_chirp,
-	 output wire new_chirp_frame
 
+    // Beam Position Tracking
+    output wire [5:0] current_elevation,
+    output wire [5:0] current_azimuth,
+    output wire [5:0] current_chirp,
+    output wire new_chirp_frame
+);
 
-    );
-	 
 // ========== SPI LEVEL SHIFTER PASSTHROUGH ==========
 // FPGA bridges 3.3V STM32 SPI bus (Bank 15) to 1.8V ADAR1000 SPI bus (Bank 34).
 // The FPGA I/O banks handle the actual voltage translation; these assigns
@@ -186,7 +184,7 @@ edge_detector_enhanced chirp_edge (
     .clk(clk_100m),
     .reset_n(reset_100m_n),
     .signal_in(stm32_new_chirp_sync),
-    .rising_falling_edge(new_chirp_pulse)            
+    .rising_falling_edge(new_chirp_pulse)
 );
 
 edge_detector_enhanced elevation_edge (

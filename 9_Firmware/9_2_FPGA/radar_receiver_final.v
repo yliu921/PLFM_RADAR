@@ -1,31 +1,31 @@
 `timescale 1ns / 1ps
 
 module radar_receiver_final (
-    input wire clk,           // 100MHz    
-	 input wire reset_n,
-    
-	// ADC Physical Interface (LVDS Inputs)
+    input wire clk,           // 100MHz
+    input wire reset_n,
+
+    // ADC Physical Interface (LVDS Inputs)
     input wire [7:0] adc_d_p,        // ADC Data P (LVDS)
     input wire [7:0] adc_d_n,        // ADC Data N (LVDS)
     input wire adc_dco_p,            // Data Clock Output P (400MHz LVDS)
     input wire adc_dco_n,            // Data Clock Output N (400MHz LVDS)
-	 output wire adc_pwdn,
-    
+    output wire adc_pwdn,
+
     // Chirp counter from transmitter (for matched filter indexing)
     input wire [5:0] chirp_counter,
     // Frame-start pulse from transmitter (CDC-synchronized, 1 clk_100m cycle)
     input wire tx_frame_start,
-    
+
     output wire [31:0] doppler_output,
     output wire doppler_valid,
     output wire [4:0] doppler_bin,
     output wire [5:0] range_bin,
-    
+
     // Matched filter range profile output (for USB)
     output wire signed [15:0] range_profile_i_out,
     output wire signed [15:0] range_profile_q_out,
     output wire range_profile_valid_out,
-    
+
     // Host command inputs (Gap 4: USB Read Path, CDC-synchronized)
     // CDC-synchronized in radar_system_top.v before reaching here
     input wire [1:0] host_mode,      // Radar mode: 00=STM32, 01=auto-scan, 10=single-chirp
@@ -186,15 +186,15 @@ wire adc_valid;            // Data valid signal
 assign adc_pwdn = 1'b0;
 
 ad9484_interface_400m adc (
-	.adc_d_p(adc_d_p),
-	.adc_d_n(adc_d_n),
-	.adc_dco_p(adc_dco_p),
-	.adc_dco_n(adc_dco_n),
-	.sys_clk(clk),
-	.reset_n(reset_n),
-	.adc_data_400m(adc_data_cmos),
-	.adc_data_valid_400m(adc_valid),
-	.adc_dco_bufg(clk_400m)
+    .adc_d_p(adc_d_p),
+    .adc_d_n(adc_d_n),
+    .adc_dco_p(adc_dco_p),
+    .adc_dco_n(adc_dco_n),
+    .sys_clk(clk),
+    .reset_n(reset_n),
+    .adc_data_400m(adc_data_cmos),
+    .adc_data_valid_400m(adc_valid),
+    .adc_dco_bufg(clk_400m)
 );
 
 // NOTE: The cdc_adc_to_processing instance that was here used src_clk=dst_clk=clk_400m
@@ -219,10 +219,10 @@ ddc_400m_enhanced ddc(
     .adc_data_valid_i(adc_valid),     // Valid at 400MHz
     .adc_data_valid_q(adc_valid),     // Valid at 400MHz
     .baseband_i(ddc_out_i), // I output at 100MHz
-    .baseband_q(ddc_out_q), // Q output at 100MHz  
+    .baseband_q(ddc_out_q), // Q output at 100MHz
     .baseband_valid_i(ddc_valid_i),     // Valid at 100MHz
-	 .baseband_valid_q(ddc_valid_q),
- 	 .mixers_enable(1'b1)
+     .baseband_valid_q(ddc_valid_q),
+      .mixers_enable(1'b1)
 );
 
 ddc_input_interface ddc_if (
@@ -275,7 +275,7 @@ chirp_memory_loader_param chirp_mem (
     .segment_select(segment_request),
     .mem_request(mem_request),
     .use_long_chirp(use_long_chirp),
-	 .sample_addr(sample_addr_from_chain),
+     .sample_addr(sample_addr_from_chain),
     .ref_i(ref_i),
     .ref_q(ref_q),
     .mem_ready(mem_ready)
@@ -300,7 +300,7 @@ wire mem_ready_delayed;
 
 latency_buffer #(
     .DATA_WIDTH(32),  // 16-bit I + 16-bit Q
-	.LATENCY(3187)
+    .LATENCY(3187)
 ) ref_latency_buffer (
     .clk(clk),
     .reset_n(reset_n),
@@ -338,13 +338,13 @@ matched_filter_multi_segment mf_dual (
     .mc_new_chirp(mc_new_chirp),
     .mc_new_elevation(mc_new_elevation),
     .mc_new_azimuth(mc_new_azimuth),
-	 .long_chirp_real(delayed_ref_i),      // From latency buffer
+     .long_chirp_real(delayed_ref_i),      // From latency buffer
     .long_chirp_imag(delayed_ref_q),
     .short_chirp_real(delayed_ref_i),     // Same for short chirp
     .short_chirp_imag(delayed_ref_q),
     .segment_request(segment_request),
     .mem_request(mem_request),
-	 .sample_addr_out(sample_addr_from_chain),
+     .sample_addr_out(sample_addr_from_chain),
     .mem_ready(mem_ready),
     .pc_i_w(range_profile_i),
     .pc_q_w(range_profile_q),
@@ -411,13 +411,13 @@ always @(posedge clk or negedge reset_n) begin
         new_frame_pulse <= 1'b0;
     end else begin
         new_frame_pulse <= 1'b0;
-        
+
         // Edge detect: tx_frame_start is a toggle-CDC derived pulse that
         // may be 1 clock wide.  Capture rising edge for clean 1-cycle pulse.
         if (tx_frame_start && !tx_frame_start_prev) begin
             new_frame_pulse <= 1'b1;
         end
-        
+
         tx_frame_start_prev <= tx_frame_start;
     end
 end
@@ -441,13 +441,13 @@ doppler_processor_optimized #(
     .range_data(range_data_32bit),
     .data_valid(range_data_valid),
     .new_chirp_frame(new_chirp_frame),
-    
+
     // Outputs
     .doppler_output(doppler_output),
     .doppler_valid(doppler_valid),
     .doppler_bin(doppler_bin),
     .range_bin(range_bin),
-    
+
     // Status
     .processing_active(doppler_processing),
     .frame_complete(doppler_frame_done),
@@ -474,12 +474,12 @@ always @(posedge clk or negedge reset_n) begin
             // First range bin of a chirp
             chirps_in_current_frame <= chirps_in_current_frame + 1;
         end
-        
+
         // Detect frame completion
         if (new_chirp_frame) begin
             frame_counter <= frame_counter + 1;
             `ifdef SIMULATION
-            $display("[TOP] Frame %0d started. Previous frame had %0d chirps", 
+            $display("[TOP] Frame %0d started. Previous frame had %0d chirps",
                      frame_counter, chirps_in_current_frame);
             `endif
             chirps_in_current_frame <= 0;
